@@ -4,8 +4,13 @@ Task contains everything needed by workers to execute and manage a workload.
 package task
 
 import (
+	"context"
+	"io"
+	"log"
+	"os"
 	"time"
 
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
@@ -73,4 +78,18 @@ type DockerResult struct {
 	Action      string
 	ContainerId string
 	Result      string
+}
+
+// Run will execute a task's container workload.
+func (d *Docker) Run() DockerResult {
+	ctx := context.Background()
+	reader, err := d.Client.ImagePull(ctx, d.Config.Image, image.PullOptions{})
+	if err != nil {
+		log.Printf("Error pulling image %s: %v\n", d.Config.Image, err)
+		return DockerResult{Error: err}
+	}
+	io.Copy(os.Stdout, reader)
+
+	// temporary return to make tests pass
+	return DockerResult{}
 }
